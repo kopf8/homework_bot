@@ -83,7 +83,6 @@ def check_response(response):
 
 def parse_status(homework):
     """Returns the status of the homework."""
-
     if 'homework_name' not in homework:
         raise KeyError(
             '<homework_name> key is missing in {homework} dict.'
