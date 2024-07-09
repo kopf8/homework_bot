@@ -51,7 +51,9 @@ python -m pip install --upgrade pip
 Create .env file and fill it as per example:
 
 ```
-SECRET_KEY = <your-secret-key>
+PRACTICUM_TOKEN=<Your token received from Yandex Practicum API>_
+TELEGRAM_TOKEN=<Your Telegram API token>
+TELEGRAM_CHAT_ID=<Your Telegram chat ID>
 ```
 
 Install project requirements from file _requirements.txt_:

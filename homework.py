@@ -37,7 +37,7 @@ def check_tokens():
     """Checks the availability of environment variables."""
     token_list = [PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID]
     if not all(token_list):
-        logging.critical('Not all')
+        logging.critical('Not all tokens provided.')
         raise exceptions.NotAllTokensExist('One or more tokens are missing.')
 
 
@@ -46,10 +46,10 @@ def send_message(bot, message):
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
         logging.debug('Message was successfully sent.')
-        return True
-    except (telebot.apihelper.ApiException,
-            requests.RequestException):
-        return False
+    except Exception as error:
+        message = (f'An error occurred when sending message to the user:'
+                   f' {error}')
+        raise exceptions.TelegramSendError(message)
 
 
 def get_api_answer(timestamp):
@@ -61,7 +61,8 @@ def get_api_answer(timestamp):
             params={'from_date': timestamp}
         )
     except requests.RequestException as error:
-        return error
+        message = f'API request error: {error}'
+        raise exceptions.APIResponseError(message)
 
     if response.status_code != HTTPStatus.OK:
         raise exceptions.HTTPStatusIsNotOK('Response status is not 200.')
@@ -74,8 +75,8 @@ def check_response(response):
     if not isinstance(response, dict):
         raise TypeError('Response is not an instance of the dict type.')
 
-    if 'homeworks' not in response:
-        raise KeyError('Response is missing valid key <homeworks>.')
+    if (homeworks := response.get('homeworks')) is None:
+        raise KeyError('Response is missing valid key {homeworks}.')
 
     if not isinstance(response['homeworks'], list):
         raise TypeError('<homeworks> is not an instance of the list type.')
@@ -83,10 +84,8 @@ def check_response(response):
 
 def parse_status(homework):
     """Returns the status of the homework."""
-    if 'homework_name' not in homework:
-        raise KeyError(
-            '<homework_name> key is missing in {homework} dict.'
-        )
+    if (homework_name := homework.get('homework_name')) is None:
+        raise KeyError('Dict don`t have key {homework_name}')
 
     if not homework['status']:
         raise exceptions.HomeworkStatusIsNotDocumented(
@@ -105,28 +104,31 @@ def parse_status(homework):
 
 def main():
     """Main function of the bot."""
+    logging.debug('Bot is starting server poll...')
     check_tokens()
     bot = telebot.TeleBot(token=TELEGRAM_TOKEN)
-    timestamp = int(time.time())
+    timestamp = 0
     status = 'send'
     while True:
         try:
             response = get_api_answer(timestamp)
+            timestamp = response.get('current_date', timestamp)
             check_response(response)
             homeworks = response['homeworks']
             if not homeworks:
                 logging.debug('No status changes.')
-            else:
-                last_homework = homeworks[0]
-                if last_homework['status'] != status:
-                    message = parse_status(last_homework)
-                    if send_message(bot, message):
-                        status = last_homework['status']
-                    else:
-                        logging.error('Error during sending the message.')
+                continue
+            last_homework = homeworks[0]
+            if last_homework['status'] != status:
+                message = parse_status(last_homework)
+                if send_message(bot, message):
+                    status = last_homework['status']
         except Exception as error:
             logging.error(f'Error while running the program: {error}.')
-        time.sleep(RETRY_PERIOD)
+        finally:
+            logging.debug(f'Waiting for {RETRY_PERIOD} seconds until the next '
+                          f'server poll...')
+            time.sleep(RETRY_PERIOD)
 
 
 if __name__ == '__main__':

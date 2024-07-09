@@ -8,6 +8,14 @@ class ResponseHasNoValidParams(Exception):
     pass
 
 
+class TelegramSendError(Exception):
+    pass
+
+
+class APIResponseError(Exception):
+    pass
+
+
 class HTTPStatusIsNotOK(Exception):
     """Raised when response HTTP Status != 200."""
     pass
