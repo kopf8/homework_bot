@@ -43,7 +43,7 @@ def send_message(bot, message):
         logging.debug("Message was successfully sent.")
     except Exception as error:
         message = (
-            f"An error occurred when sending message to the user:" f" {error}"
+            f"An error occurred when sending message to the user: {error}"
         )
         raise exceptions.TelegramSendError(message)
 
@@ -68,11 +68,13 @@ def check_response(response):
     """Checks params of the API response."""
     if not isinstance(response, dict):
         raise exceptions.WrongTypeError(
-            "Response is not an instance of the " "dict type."
+            "Response is not an instance of the dict type."
         )
 
     if (homeworks := response.get("homeworks")) is None:
-        raise KeyError("Response is missing valid key {homeworks}.")
+        raise KeyError(
+            f'"homeworks" is currently {homeworks} - missing valid key.'
+        )
 
     if not isinstance(response["homeworks"], list):
         raise TypeError("<homeworks> is not an instance of the list type.")
@@ -93,7 +95,6 @@ def parse_status(homework):
             "The status of this homework is not documented."
         )
 
-    homework_name = homework["homework_name"]
     verdict = HOMEWORK_VERDICTS[homework["status"]]
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
