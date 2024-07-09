@@ -13,11 +13,17 @@ class TelegramSendError(Exception):
 
 
 class APIResponseError(Exception):
+    """Raised when response HTTP Status != 200."""
     pass
 
 
 class HTTPStatusIsNotOK(Exception):
     """Raised when response HTTP Status != 200."""
+    pass
+
+
+class WrongTypeError(TypeError):
+    """Raised when API response has wrong data type."""
     pass
 
 
