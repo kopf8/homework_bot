@@ -33,7 +33,7 @@ def check_tokens():
     token_list = [PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID]
     if not all(token_list):
         logging.critical("Not all tokens provided.")
-        raise exceptions.NotAllTokensExist("One or more tokens are missing.")
+        raise exceptions.NotAllTokensExist()
 
 
 def send_message(bot, message):
@@ -59,7 +59,7 @@ def get_api_answer(timestamp):
         raise exceptions.APIResponseError(message)
 
     if response.status_code != HTTPStatus.OK:
-        raise exceptions.HTTPStatusIsNotOK("Response status is not 200.")
+        raise exceptions.HTTPStatusIsNotOK()
 
     return response.json()
 
@@ -76,7 +76,7 @@ def check_response(response):
             f'"homeworks" is currently {homeworks} - missing valid key.'
         )
 
-    if not isinstance(response["homeworks"], list):
+    if not isinstance(homeworks, list):
         raise TypeError("<homeworks> is not an instance of the list type.")
 
 
@@ -85,17 +85,14 @@ def parse_status(homework):
     if (homework_name := homework.get("homework_name")) is None:
         raise KeyError("Dict don`t have key {homework_name}")
 
-    if not homework["status"]:
-        raise exceptions.HomeworkStatusIsNotDocumented(
-            "This homework does not have any status."
-        )
+    if (homework_status := homework["status"]) is None:
+        raise exceptions.HomeworkStatusIsMissing()
 
     if homework["status"] not in HOMEWORK_VERDICTS:
-        raise exceptions.HomeworkStatusIsNotDocumented(
-            "The status of this homework is not documented."
-        )
+        raise exceptions.HomeworkStatusIsNotDocumented()
 
-    verdict = HOMEWORK_VERDICTS[homework["status"]]
+    verdict = HOMEWORK_VERDICTS[homework_status]
+    logging.debug(f"Homework status for '{homework_name}' - {verdict}.")
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
 
@@ -109,7 +106,11 @@ def main():
     while True:
         try:
             response = get_api_answer(timestamp)
-            timestamp = response.get("current_date", timestamp)
+            timestamp = (
+                response.get("current_date", timestamp)
+                if response
+                else timestamp
+            )
             check_response(response)
             homeworks = response["homeworks"]
             if not homeworks:
