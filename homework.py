@@ -24,7 +24,11 @@ HOMEWORK_VERDICTS = {
 }
 
 logging.basicConfig(
-    level=logging.DEBUG, filename="main.log", encoding="utf-8", filemode="w"
+    level=logging.DEBUG,
+    filename="main.log",
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    encoding="utf-8",
+    filemode="w",
 )
 
 
@@ -102,25 +106,21 @@ def main():
     check_tokens()
     bot = telebot.TeleBot(token=TELEGRAM_TOKEN)
     timestamp = 0
-    status = "send"
     while True:
         try:
             response = get_api_answer(timestamp)
-            timestamp = (
-                response.get("current_date", timestamp)
-                if response
-                else timestamp
-            )
             check_response(response)
             homeworks = response["homeworks"]
             if not homeworks:
                 logging.debug("No status changes.")
                 continue
-            last_homework = homeworks[0]
-            if last_homework["status"] != status:
-                message = parse_status(last_homework)
-                if send_message(bot, message):
-                    status = last_homework["status"]
+            if homeworks[0] != homeworks:
+                send_message(bot, parse_status(homeworks[0]))
+                timestamp = (
+                    response.get("current_date", timestamp)
+                    if send_message(bot, parse_status(homeworks[0]))
+                    else timestamp
+                )
         except Exception as error:
             logging.error(f"Error while running the program: {error}.")
         finally:
