@@ -13,7 +13,7 @@ PRACTICUM_TOKEN = os.getenv("PRACTICUM_TOKEN")
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
-RETRY_PERIOD = 600
+RETRY_PERIOD = 120
 ENDPOINT = "https://practicum.yandex.ru/api/user_api/homework_statuses/"
 HEADERS = {"Authorization": f"OAuth {PRACTICUM_TOKEN}"}
 
@@ -96,8 +96,9 @@ def parse_status(homework):
         raise exceptions.HomeworkStatusIsNotDocumented()
 
     verdict = HOMEWORK_VERDICTS[homework_status]
-    logging.debug(f"Homework status for '{homework_name}' - {verdict}.")
-    return f'Изменился статус проверки работы "{homework_name}". {verdict}'
+    logging.debug(f'Homework status for "{homework_name}" - {verdict}.')
+    return (f'Изменился статус проверки работы "{homework_name}" из урока '
+            f'{homework.get("lesson_name")}. {verdict}')
 
 
 def main():
@@ -110,14 +111,14 @@ def main():
         try:
             response = get_api_answer(timestamp)
             check_response(response)
-            homeworks = response["homeworks"]
+            homeworks = response['homeworks']
             if not homeworks:
                 logging.debug("No status changes.")
                 continue
             if homeworks[0] != homeworks:
                 send_message(bot, parse_status(homeworks[0]))
                 timestamp = (
-                    response.get("current_date", timestamp)
+                    response.get('current_date', timestamp)
                     if send_message(bot, parse_status(homeworks[0]))
                     else timestamp
                 )
@@ -125,7 +126,7 @@ def main():
             logging.error(f"Error while running the program: {error}.")
         finally:
             logging.debug(
-                f"Waiting for {RETRY_PERIOD} seconds until the next "
+                f"Waiting for {RETRY_PERIOD} seconds until the next " 
                 f"server poll..."
             )
             time.sleep(RETRY_PERIOD)

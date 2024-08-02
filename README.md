@@ -17,7 +17,7 @@ Python, Telegram BOT API, Yandex.Practicum API
 Clone repository and switch to project directory using command line:
 
 ```
-git@github.com:kopf8/homework_bot.git
+git clone git@github.com:kopf8/homework_bot.git
 ```
 
 ```
