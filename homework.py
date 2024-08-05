@@ -13,7 +13,7 @@ PRACTICUM_TOKEN = os.getenv("PRACTICUM_TOKEN")
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
-RETRY_PERIOD = 120
+RETRY_PERIOD = 600
 ENDPOINT = "https://practicum.yandex.ru/api/user_api/homework_statuses/"
 HEADERS = {"Authorization": f"OAuth {PRACTICUM_TOKEN}"}
 
@@ -107,6 +107,7 @@ def main():
     check_tokens()
     bot = telebot.TeleBot(token=TELEGRAM_TOKEN)
     timestamp = 0
+    previous_message = ''
     while True:
         try:
             response = get_api_answer(timestamp)
@@ -115,13 +116,10 @@ def main():
             if not homeworks:
                 logging.debug("No status changes.")
                 continue
-            if homeworks[0] != homeworks:
-                send_message(bot, parse_status(homeworks[0]))
-                timestamp = (
-                    response.get('current_date', timestamp)
-                    if send_message(bot, parse_status(homeworks[0]))
-                    else timestamp
-                )
+            new_message = parse_status(homeworks[0])
+            if new_message != previous_message:
+                send_message(bot, new_message)
+                timestamp = response.get('current_date', timestamp)
         except Exception as error:
             logging.error(f"Error while running the program: {error}.")
         finally:
